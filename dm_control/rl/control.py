@@ -122,7 +122,8 @@ class Environment(dm_env.Environment):
 
     episode_over = discount is not None
 
-    if episode_over:
+    if episode_over or (hasattr(self.task, 'should_terminate_episode') \
+                and self.task.should_terminate_episode(self._physics)):
       self._reset_next_step = True
       return dm_env.TimeStep(
           dm_env.StepType.LAST, reward, discount, observation)
