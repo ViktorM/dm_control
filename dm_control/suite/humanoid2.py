@@ -276,10 +276,10 @@ class HumanoidSimple(base.Task):
 
       # get number joint at limits
       joint_angles_norm = np.abs(physics.joint_angles(self._joint_limits))
-      joints_at_limit_cost = 0.2 * np.sum((joint_angles_norm - 0.98) > 0)
+      joints_at_limit_cost = 0.1 * np.sum((joint_angles_norm - 0.98) > 0.0)
     #  print ("Joints at limits cost", joints_at_limit_cost)
 
-      electricity_cost = 0.01 * np.sum(np.abs(physics.control() * physics.joint_velocities()))
+      electricity_cost = 0.005 * np.sum(np.abs(physics.control() * physics.joint_velocities()))
     #  print ("Electricity cost", electricity_cost)
     #  print ("Joint velocities", physics.joint_velocities())
 
