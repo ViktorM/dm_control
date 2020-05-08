@@ -76,6 +76,13 @@ def run_pure_state(time_limit=_DEFAULT_TIME_LIMIT, random=None,
 class Physics(mujoco.Physics):
   """Physics simulation with additional features for the Walker domain."""
 
+  def unscale(self, x, limits):
+    delta = limits[1] - limits[0]
+  #  print(limits)
+  #  print(delta)
+    delta[abs(delta) < 1e-6] = 1.0
+    return (2.0 * x - limits[1] - limits[0]) / delta
+
   def torso_upright(self):
     """Returns projection from z-axes of torso to the z-axes of world."""
     return self.named.data.xmat['torso', 'zz']
@@ -104,9 +111,14 @@ class Physics(mujoco.Physics):
     """Returns the x-projection of the torso orientation matrix."""
     return self.named.data.xmat['torso', ['xx', 'xy', 'xz']]
 
-  def joint_angles(self):
+  def joint_angles(self, limits=None):
     """Returns the state without global orientation or position."""
-    return self.data.qpos[7:].copy()  # Skip the 7 DoFs of the free root joint.
+    if limits is None:
+      angles = self.data.qpos[7:].copy()
+    else:
+      angles = self.unscale(self.data.qpos[7:].copy(), limits)
+
+    return angles  # Skip the 7 DoFs of the free root joint.
 
   def joint_velocities(self):
     """Returns the state without global orientation or position."""
@@ -150,9 +162,9 @@ class HumanoidSimple(base.Task):
     """
     self._move_speed = move_speed
     self._pure_state = pure_state
-    self._terminate_at_height = 1.15
+    self._terminate_at_height = 1.05
     self._joint_velocity_scale = 0.1
-  #  self._joint_limits = np.array(2, 21)
+    self._joint_limits = np.zeros((2, 21))
     print("Termination heigth = ", self._terminate_at_height)
     super(HumanoidSimple, self).__init__(random=random)
 
@@ -184,17 +196,24 @@ class HumanoidSimple(base.Task):
 
       qpos = physics.named.data.qpos
 
+      limited_joint_id = 0
       for joint_id in range(physics.model.njnt):
         joint_name = physics.model.id2name(joint_id, 'joint')
         joint_type = physics.model.jnt_type[joint_id]
         is_limited = physics.model.jnt_limited[joint_id]
         range_min, range_max = physics.model.jnt_range[joint_id]
 
-        delta_max = range_max - qpos[joint_name]
-        delta_min = range_min - qpos[joint_name]
-
         if is_limited:
           if joint_type == hinge or joint_type == slide:
+            self._joint_limits[0][limited_joint_id] = range_min
+            self._joint_limits[1][limited_joint_id] = range_max
+          #  print("Joint ", limited_joint_id)
+          #  print("Range ", range_min, range_max)
+            limited_joint_id += 1
+
+            delta_max = range_max - qpos[joint_name]
+            delta_min = range_min - qpos[joint_name]
+
             qpos[joint_name] = qpos[joint_name] + 0.25 * random.uniform(delta_min, delta_max)
 
       # Check for collisions.
@@ -211,7 +230,7 @@ class HumanoidSimple(base.Task):
       obs['position'] = physics.position()
       obs['velocity'] = physics.velocity()
     else:
-      obs['joint_angles'] = physics.joint_angles()
+      obs['joint_angles'] = physics.joint_angles(self._joint_limits)
       obs['head_height'] = physics.head_height()
       obs['extremities'] = physics.extremities()
       obs['torso_vertical'] = physics.torso_vertical_orientation()
@@ -254,8 +273,18 @@ class HumanoidSimple(base.Task):
                                sigmoid='linear')'''
       
       move = physics.center_of_mass_velocity()[0] * physics.torso_forward()
+
+      # get number joint at limits
+      joint_angles_norm = np.abs(physics.joint_angles(self._joint_limits))
+      joints_at_limit_cost = 0.2 * np.sum((joint_angles_norm - 0.98) > 0)
+    #  print ("Joints at limits cost", joints_at_limit_cost)
+
+      electricity_cost = 0.01 * np.sum(np.abs(physics.control() * physics.joint_velocities()))
+    #  print ("Electricity cost", electricity_cost)
+    #  print ("Joint velocities", physics.joint_velocities())
+
       #move = com_velocity * physics.torso_forward()
-      return move + 2.0 * standing + 0.1 * upright - 0.1 * np.sum(np.abs(physics.control() * physics.joint_velocities()))
+      return move + 2.0 + 0.1 * upright - electricity_cost - joints_at_limit_cost
 
   def should_terminate_episode(self, physics):
   #  print("Failure termination2 = ", self._failure_termination)
