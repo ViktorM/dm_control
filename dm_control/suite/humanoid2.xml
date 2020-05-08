@@ -135,27 +135,27 @@
   </worldbody>
 
   <actuator>
-    <motor name="abdomen_y"       gear="60"  joint="abdomen_y"/>
-    <motor name="abdomen_z"       gear="60"  joint="abdomen_z"/>
-    <motor name="abdomen_x"       gear="60"  joint="abdomen_x"/>
-    <motor name="right_hip_x"     gear="60"  joint="right_hip_x"/>
-    <motor name="right_hip_z"     gear="60"  joint="right_hip_z"/>
-    <motor name="right_hip_y"     gear="180" joint="right_hip_y"/>
-    <motor name="right_knee"      gear="120"  joint="right_knee"/>
-    <motor name="right_ankle_x"   gear="30"  joint="right_ankle_x"/>
-    <motor name="right_ankle_y"   gear="30"  joint="right_ankle_y"/>
-    <motor name="left_hip_x"      gear="60"  joint="left_hip_x"/>
-    <motor name="left_hip_z"      gear="60"  joint="left_hip_z"/>
-    <motor name="left_hip_y"      gear="180" joint="left_hip_y"/>
-    <motor name="left_knee"       gear="120"  joint="left_knee"/>
-    <motor name="left_ankle_x"    gear="30"  joint="left_ankle_x"/>
-    <motor name="left_ankle_y"    gear="30"  joint="left_ankle_y"/>
-    <motor name="right_shoulder1" gear="30"  joint="right_shoulder1"/>
-    <motor name="right_shoulder2" gear="30"  joint="right_shoulder2"/>
-    <motor name="right_elbow"     gear="60"  joint="right_elbow"/>
-    <motor name="left_shoulder1"  gear="30"  joint="left_shoulder1"/>
-    <motor name="left_shoulder2"  gear="30"  joint="left_shoulder2"/>
-    <motor name="left_elbow"      gear="60"  joint="left_elbow"/>
+    <motor name="abdomen_y"       gear="50"  joint="abdomen_y"/>
+    <motor name="abdomen_z"       gear="50"  joint="abdomen_z"/>
+    <motor name="abdomen_x"       gear="50"  joint="abdomen_x"/>
+    <motor name="right_hip_x"     gear="50"  joint="right_hip_x"/>
+    <motor name="right_hip_z"     gear="50"  joint="right_hip_z"/>
+    <motor name="right_hip_y"     gear="150" joint="right_hip_y"/>
+    <motor name="right_knee"      gear="100"  joint="right_knee"/>
+    <motor name="right_ankle_x"   gear="25"  joint="right_ankle_x"/>
+    <motor name="right_ankle_y"   gear="25"  joint="right_ankle_y"/>
+    <motor name="left_hip_x"      gear="50"  joint="left_hip_x"/>
+    <motor name="left_hip_z"      gear="50"  joint="left_hip_z"/>
+    <motor name="left_hip_y"      gear="150" joint="left_hip_y"/>
+    <motor name="left_knee"       gear="100"  joint="left_knee"/>
+    <motor name="left_ankle_x"    gear="25"  joint="left_ankle_x"/>
+    <motor name="left_ankle_y"    gear="25"  joint="left_ankle_y"/>
+    <motor name="right_shoulder1" gear="25"  joint="right_shoulder1"/>
+    <motor name="right_shoulder2" gear="25"  joint="right_shoulder2"/>
+    <motor name="right_elbow"     gear="50"  joint="right_elbow"/>
+    <motor name="left_shoulder1"  gear="25"  joint="left_shoulder1"/>
+    <motor name="left_shoulder2"  gear="25"  joint="left_shoulder2"/>
+    <motor name="left_elbow"      gear="50"  joint="left_elbow"/>
   </actuator>
 
   <sensor>

@@ -183,8 +183,6 @@ class HumanoidSimple(base.Task):
       physics.after_reset()
       penetrating = physics.data.ncon > 0'''
 
-    print("Episode init")
-
     random = np.random
 
     penetrating = True
@@ -214,7 +212,7 @@ class HumanoidSimple(base.Task):
             delta_max = range_max - qpos[joint_name]
             delta_min = range_min - qpos[joint_name]
 
-            qpos[joint_name] = qpos[joint_name] + 0.25 * random.uniform(delta_min, delta_max)
+            qpos[joint_name] = qpos[joint_name] + 0.3 * random.uniform(delta_min, delta_max)
 
       # Check for collisions.
       physics.after_reset()
@@ -275,9 +273,15 @@ class HumanoidSimple(base.Task):
       move = physics.center_of_mass_velocity()[0] * physics.torso_forward()
 
       # get number joint at limits
-      joint_angles_norm = np.abs(physics.joint_angles(self._joint_limits))
-      joints_at_limit_cost = 0.1 * np.sum((joint_angles_norm - 0.98) > 0.0)
-    #  print ("Joints at limits cost", joints_at_limit_cost)
+      joint_angles_norm = np.abs(physics.joint_angles(self._joint_limits)) - 0.98
+      joint_angles_norm[joint_angles_norm < 0.0] = 0.0
+
+      joint_angles_norm = joint_angles_norm / (1.0 - 0.98)
+      joint_angles_norm[joint_angles_norm > 1.0] = 1.0
+      #print("Joint angles norm2", joint_angles_norm)
+
+      joints_at_limit_cost = 0.15 * np.sum(joint_angles_norm)
+      #print ("Joints at limits cost", joints_at_limit_cost)
 
       electricity_cost = 0.005 * np.sum(np.abs(physics.control() * physics.joint_velocities()))
     #  print ("Electricity cost", electricity_cost)
