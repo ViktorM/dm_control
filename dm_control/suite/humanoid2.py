@@ -31,8 +31,8 @@ from dm_control.utils import rewards
 from dm_control.mujoco.wrapper import mjbindings
 import numpy as np
 
-_DEFAULT_TIME_LIMIT = 20
-_CONTROL_TIMESTEP = .02
+_DEFAULT_TIME_LIMIT = 16.6
+_CONTROL_TIMESTEP = 0.0166
 
 # Height of head above which stand reward is 1.
 _STAND_HEIGHT = 1.4
@@ -47,7 +47,7 @@ SUITE = containers.TaggedTasks()
 
 def get_model_and_assets():
   """Returns a tuple containing the model XML string and a dict of assets."""
-  return common.read_model('humanoid.xml'), common.ASSETS
+  return common.read_model('humanoid2.xml'), common.ASSETS
 
 
 @SUITE.add('benchmarking')
@@ -108,6 +108,10 @@ class Physics(mujoco.Physics):
     """Returns the state without global orientation or position."""
     return self.data.qpos[7:].copy()  # Skip the 7 DoFs of the free root joint.
 
+  def joint_velocities(self):
+    """Returns the state without global orientation or position."""
+    return self.data.qvel[6:].copy()  # Skip linear and angular velocities of the free root joint.
+
   def extremities(self):
     """Returns end effector positions in egocentric frame."""
     torso_frame = self.named.data.xmat['torso'].reshape(3, 3)
@@ -118,6 +122,14 @@ class Physics(mujoco.Physics):
         torso_to_limb = self.named.data.xpos[side + limb] - torso_pos
         positions.append(torso_to_limb.dot(torso_frame))
     return np.hstack(positions)
+
+  def contact_forces(self):
+    """Returns feet contact forces."""
+
+  #  for side in ('left_', 'right_'):
+  #    for limb in ('foot'):
+    
+    pass
 
 
 class HumanoidSimple(base.Task):
@@ -138,7 +150,9 @@ class HumanoidSimple(base.Task):
     """
     self._move_speed = move_speed
     self._pure_state = pure_state
-    self._terminate_at_height = 1.2
+    self._terminate_at_height = 1.15
+    self._joint_velocity_scale = 0.1
+  #  self._joint_limits = np.array(2, 21)
     print("Termination heigth = ", self._terminate_at_height)
     super(HumanoidSimple, self).__init__(random=random)
 
@@ -202,7 +216,8 @@ class HumanoidSimple(base.Task):
       obs['extremities'] = physics.extremities()
       obs['torso_vertical'] = physics.torso_vertical_orientation()
       obs['com_velocity'] = physics.center_of_mass_velocity()
-      obs['velocity'] = physics.velocity()
+      obs['velocity'] = self._joint_velocity_scale * physics.velocity()
+      obs['prev_actions'] = physics.control()
     return obs
 
   def after_step(self, physics, random_state=None):
@@ -240,7 +255,7 @@ class HumanoidSimple(base.Task):
       
       move = physics.center_of_mass_velocity()[0] * physics.torso_forward()
       #move = com_velocity * physics.torso_forward()
-      return small_control * stand_reward * move + stand_reward
+      return move + 2.0 * standing + 0.1 * upright - 0.1 * np.sum(np.abs(physics.control() * physics.joint_velocities()))
 
   def should_terminate_episode(self, physics):
   #  print("Failure termination2 = ", self._failure_termination)
