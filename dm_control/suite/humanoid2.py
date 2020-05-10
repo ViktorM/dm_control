@@ -31,8 +31,8 @@ from dm_control.utils import rewards
 from dm_control.mujoco.wrapper import mjbindings
 import numpy as np
 
-_DEFAULT_TIME_LIMIT = 16.6
-_CONTROL_TIMESTEP = 0.0166
+_DEFAULT_TIME_LIMIT = 16.65
+_CONTROL_TIMESTEP = 0.01665
 
 # Height of head above which stand reward is 1.
 _STAND_HEIGHT = 1.4
@@ -135,13 +135,10 @@ class Physics(mujoco.Physics):
         positions.append(torso_to_limb.dot(torso_frame))
     return np.hstack(positions)
 
-  def contact_forces(self):
-    """Returns feet contact forces."""
-
-  #  for side in ('left_', 'right_'):
-  #    for limb in ('foot'):
-    
-    pass
+  def feet_touch(self):
+  #  print("Touch forces: ", self.data.sensor.touch.copy())
+  #  print("Feet touch forces: ", self.named.data.sensordata[['right_right_foot_touch', 'left_right_foot_touch', 'right_left_foot_touch', 'left_left_foot_touch']])
+    return self.named.data.sensordata[['right_right_foot_touch', 'left_right_foot_touch', 'right_left_foot_touch', 'left_left_foot_touch']]
 
 
 class HumanoidSimple(base.Task):
@@ -164,6 +161,7 @@ class HumanoidSimple(base.Task):
     self._pure_state = pure_state
     self._terminate_at_height = 1.05
     self._joint_velocity_scale = 0.1
+    self._contact_force_scale = 0.0005
     self._joint_limits = np.zeros((2, 21))
     print("Termination heigth = ", self._terminate_at_height)
     super(HumanoidSimple, self).__init__(random=random)
@@ -234,6 +232,7 @@ class HumanoidSimple(base.Task):
       obs['torso_vertical'] = physics.torso_vertical_orientation()
       obs['com_velocity'] = physics.center_of_mass_velocity()
       obs['velocity'] = self._joint_velocity_scale * physics.velocity()
+      obs['touch'] = self._contact_force_scale * physics.feet_touch()
       obs['prev_actions'] = physics.control()
     return obs
 
