@@ -137,8 +137,16 @@ class Physics(mujoco.Physics):
 
   def feet_touch(self):
   #  print("Touch forces: ", self.data.sensor.touch.copy())
-  #  print("Feet touch forces: ", self.named.data.sensordata[['right_right_foot_touch', 'left_right_foot_touch', 'right_left_foot_touch', 'left_left_foot_touch']])
-    return self.named.data.sensordata[['right_right_foot_touch', 'left_right_foot_touch', 'right_left_foot_touch', 'left_left_foot_touch']]
+  #  force_data = self.named.data.sensordata[['right_right_foot_touch', 'left_right_foot_touch', 'right_left_foot_touch', 'left_left_foot_touch']]
+  #  print("Feet touch forces: ", force_data)
+
+    right_foot_touch = self.named.data.sensordata['right_right_foot_touch'] + self.named.data.sensordata['left_right_foot_touch']
+    left_foot_touch = self.named.data.sensordata['right_left_foot_touch'] + self.named.data.sensordata['left_left_foot_touch']
+  #  print(right_foot_touch, left_foot_touch)
+
+    feet_touch = np.concatenate((right_foot_touch, left_foot_touch))
+  #  print(feet_touch)
+    return feet_touch
 
 
 class HumanoidSimple(base.Task):
@@ -160,6 +168,7 @@ class HumanoidSimple(base.Task):
     self._move_speed = move_speed
     self._pure_state = pure_state
     self._terminate_at_height = 1.05
+    self._start_noise = 0.2
     self._joint_velocity_scale = 0.1
     self._contact_force_scale = 0.0005
     self._joint_limits = np.zeros((2, 21))
@@ -191,6 +200,7 @@ class HumanoidSimple(base.Task):
       free = mjbindings.enums.mjtJoint.mjJNT_FREE
 
       qpos = physics.named.data.qpos
+    #  print("qpos: ", qpos)
 
       limited_joint_id = 0
       for joint_id in range(physics.model.njnt):
@@ -210,7 +220,10 @@ class HumanoidSimple(base.Task):
             delta_max = range_max - qpos[joint_name]
             delta_min = range_min - qpos[joint_name]
 
-            qpos[joint_name] = qpos[joint_name] + 0.3 * random.uniform(delta_min, delta_max)
+            qpos[joint_name] = qpos[joint_name] + self._start_noise * random.uniform(delta_min, delta_max)
+        else:
+          if joint_type == free:
+            qpos[joint_name][2] = 1.35
 
       # Check for collisions.
       physics.after_reset()
@@ -285,8 +298,7 @@ class HumanoidSimple(base.Task):
       electricity_cost = 0.005 * np.sum(np.abs(physics.control() * physics.joint_velocities()))
     #  print ("Electricity cost", electricity_cost)
     #  print ("Joint velocities", physics.joint_velocities())
-
-      #move = com_velocity * physics.torso_forward()
+    #  move = com_velocity * physics.torso_forward()
       return move + 2.0 + 0.1 * upright - electricity_cost - joints_at_limit_cost
 
   def should_terminate_episode(self, physics):
